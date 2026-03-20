@@ -1,21 +1,23 @@
 const express = require("express");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
 
 const app = express();
 
 app.get("/players", async (req, res) => {
   try {
     const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+      executablePath: "/usr/bin/chromium-browser", // Chromium preinstalado en Render
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      headless: "new"
     });
 
     const page = await browser.newPage();
 
+    // Vamos directamente al endpoint JSON
     await page.goto("https://games.roblox.com/v1/games?universeIds=5484458349", {
       waitUntil: "networkidle2"
     });
 
-    // Leer JSON directamente del body
     const content = await page.evaluate(() => document.body.innerText);
 
     await browser.close();
@@ -30,13 +32,9 @@ app.get("/players", async (req, res) => {
     }
 
   } catch (e) {
+    console.log(e);
     res.send("ERROR");
   }
-});
-
-app.listen(3000, () => {
-  console.log("Server running");
-});
 });
 
 app.listen(3000, () => {
