@@ -1,32 +1,24 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core");
+const fetch = require("node-fetch"); // npm install node-fetch@2
 
 const app = express();
 
 app.get("/players", async (req, res) => {
   try {
-    const browser = await puppeteer.launch({
-      executablePath: "/usr/bin/chromium-browser", // Chromium preinstalado en Render
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      headless: "new"
-    });
+    const response = await fetch(
+      "https://games.roblox.com/v1/games?universeIds=5484458349",
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0", // simula navegador
+          "Accept": "application/json"
+        }
+      }
+    );
 
-    const page = await browser.newPage();
-
-    // Vamos directamente al endpoint JSON
-    await page.goto("https://games.roblox.com/v1/games?universeIds=5484458349", {
-      waitUntil: "networkidle2"
-    });
-
-    const content = await page.evaluate(() => document.body.innerText);
-
-    await browser.close();
-
-    const data = JSON.parse(content);
+    const data = await response.json();
 
     if (data.data && data.data.length > 0) {
-      const playing = data.data[0].playing;
-      res.send(String(playing));
+      res.send(String(data.data[0].playing));
     } else {
       res.send("NO_DATA");
     }
@@ -35,6 +27,10 @@ app.get("/players", async (req, res) => {
     console.log(e);
     res.send("ERROR");
   }
+});
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server running");
 });
 
 app.listen(3000, () => {
